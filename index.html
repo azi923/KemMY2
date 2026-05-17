@@ -71,6 +71,34 @@
   .view { display: none; position: relative; z-index: 1; }
   .view.active { display: block; }
 
+  /* Loading screen */
+  #loading-screen {
+    position: fixed; inset: 0; z-index: 999;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+  }
+  #loading-screen.hidden { display: none; }
+  .loading-icon { font-size: 48px; animation: bounce 1s infinite; }
+  .loading-text { color: var(--green); font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
+  .loading-bar-wrap { width: 200px; height: 3px; background: rgba(74,124,70,.2); border-radius: 10px; overflow: hidden; }
+  .loading-bar { height: 100%; background: var(--green); border-radius: 10px; animation: loadbar 1.5s ease-in-out infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  @keyframes loadbar { 0%{width:0%;margin-left:0} 50%{width:60%;margin-left:20%} 100%{width:0%;margin-left:100%} }
+
+  /* Error banner */
+  #error-banner {
+    display: none;
+    background: rgba(214,48,48,.12);
+    border: 1px solid rgba(214,48,48,.3);
+    color: #f08080;
+    text-align: center;
+    padding: 12px 20px;
+    font-size: 13px;
+    position: relative; z-index: 1;
+  }
+  #error-banner.show { display: block; }
+
   .hero {
     padding: 52px 24px 32px;
     text-align: center;
@@ -225,7 +253,6 @@
   .info-desc { color:#a0b8a0; line-height:1.7; margin-bottom:16px; font-size:14px; }
   .section-label { color:var(--green); font-size:11px; letter-spacing:.12em; font-weight:700; margin-bottom:8px; text-transform:uppercase; }
 
-  /* Detail stats grid */
   .stats-grid {
     display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;
   }
@@ -236,7 +263,6 @@
   .stat-val { color:var(--green); font-weight:800; font-size:16px; margin-bottom:2px; }
   .stat-label { color:var(--text-muted); font-size:10px; }
 
-  /* Best for tags */
   .best-for-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
   .best-for-tag {
     font-size:11px; padding:4px 12px; border-radius:20px;
@@ -244,7 +270,6 @@
     color:var(--orange);
   }
 
-  /* Rules */
   .rules-list { list-style:none; }
   .rules-list li {
     padding:6px 0; border-bottom:1px solid rgba(74,124,70,.1);
@@ -366,6 +391,13 @@
 </head>
 <body>
 
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="loading-icon">⛺</div>
+  <div class="loading-text">Memuatkan campsite...</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+</div>
+
 <header>
   <a class="logo" onclick="showView('home')">
     <span class="logo-icon">⛺</span>
@@ -379,6 +411,8 @@
     <button class="nav-btn" id="nav-map" onclick="showView('map')">🗺️ Peta</button>
   </nav>
 </header>
+
+<div id="error-banner">⚠️ Gagal memuatkan data campsite. Sila semak sambungan internet anda dan cuba lagi.</div>
 
 <!-- HOME -->
 <div id="view-home" class="view active">
@@ -479,6 +513,9 @@
 </div>
 
 <script>
+// ─── CONFIG ───────────────────────────────────────────────
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_bD85WmuW8J7mBUWitmTwRk0otuYXan2GlZAbccYJTLxo2oucNSP7TBYeutfgPkwXwxJxEyTb90b6/pub?gid=1824680980&single=true&output=csv';
+
 const typeColors = {
   Jungle:"#2d6a4f", River:"#1d6fa4", Waterfall:"#48cae4",
   Family:"#e07a5f", Highland:"#6d6875", Trekking:"#b5838d",
@@ -486,291 +523,94 @@ const typeColors = {
   Glamping:"#9b5de5", Cave:"#6b4226", Waterpark:"#00b4d8"
 };
 
-const campsites = [
-  {
-    id: 1,
-    name: "Hutan Lipur Lentang",
-    location: "Bentong, Pahang",
-    state: "Pahang",
-    lat: 3.5234, lng: 101.9108,
-    type: ["Jungle","River"],
-    price: 15,
-    capacity: "200 orang",
-    area: "5 ekar",
-    openHours: "8am – 10pm",
-    rating: 4.7, totalReviews: 84,
-    bestFor: ["Keluarga","Kumpulan Besar","Pengakap"],
-    owner: { name: "Pak Azmi", phone: "0123456789", whatsapp: "60123456789" },
-    facilities: ["Tandas","Shower","BBQ Pit","Sungai","Parking","Khemah Sewa","Lampu Kawasan"],
-    rules: ["Dilarang bising selepas 11pm","Sampah mesti dibuang di tempat yang ditetapkan","Dilarang membawa alkohol","Api unggun hanya di kawasan yang ditetapkan","Kanak-kanak mesti diawasi di tepi sungai"],
-    description: "Hutan Lipur Lentang adalah destinasi alam semulajadi yang tenang di kaki Gunung Benom. Dengan sungai yang jernih dan denai hiking yang menakjubkan, campsite ini sesuai untuk keluarga dan kumpulan besar yang ingin menikmati keindahan alam Pahang. Pokok-pokok berusia ratusan tahun mengelilingi kawasan perkhemahan, memberikan teduhan semula jadi sepanjang hari.",
-    photos: [
-      "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=80",
-      "https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=800&q=80",
-      "https://images.unsplash.com/photo-1563299796-b729d4e43ad9?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Hafizuddin R.", avatar:"H", rating:5, comment:"Tempat yang sangat cantik! Sungai jernih dan udara segar. Kami akan datang lagi!", date:"2 hari lalu" },
-      { user:"Siti Aisyah M.", avatar:"S", rating:4, comment:"Bagus tapi toilet perlu dinaik taraf sikit. Overall best!", date:"1 minggu lalu" },
-      { user:"Razif K.", avatar:"R", rating:5, comment:"Perfect untuk escape dari bandar. Owner friendly dan helpful.", date:"2 minggu lalu" }
-    ]
-  },
-  {
-    id: 2,
-    name: "Kem Sungai Gabai",
-    location: "Hulu Langat, Selangor",
-    state: "Selangor",
-    lat: 3.0789, lng: 101.8756,
-    type: ["Waterfall","Family"],
-    price: 20,
-    capacity: "300 orang",
-    area: "8 ekar",
-    openHours: "7am – 11pm",
-    rating: 4.5, totalReviews: 122,
-    bestFor: ["Keluarga","Team Building","Pelancong"],
-    owner: { name: "Cik Rohani", phone: "0198887766", whatsapp: "60198887766" },
-    facilities: ["Chalet","Kafeteria","Air Terjun","Wifi","Parking","Gelanggang Sukan","Musolla"],
-    rules: ["Waktu senyap 12 tengah malam","Tiada api unggun berhampiran pokok","Pakaian sopan diperlukan","Dilarang berburu binatang liar","Booking diperlukan untuk kumpulan >50 orang"],
-    description: "Terletak berhampiran dengan Air Terjun Gabai yang terkenal, campsite ini menawarkan pengalaman alam semulajadi yang lengkap dengan kemudahan moden. Airnya sejuk dan segar, sesuai untuk berendam dan bersantai. Kafeteria menyediakan makanan tempatan yang lazat, menjadikan ia pilihan sempurna untuk aktiviti keluarga dan team building korporat.",
-    photos: [
-      "https://images.unsplash.com/photo-1537225228614-56cc3556d7ed?w=800&q=80",
-      "https://images.unsplash.com/photo-1496080174650-637e3f22fa03?w=800&q=80",
-      "https://images.unsplash.com/photo-1533240332313-0db49b459ad6?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Amirul F.", avatar:"A", rating:5, comment:"Air terjun memang power! Sangat sesuai untuk bawa anak-anak.", date:"3 hari lalu" },
-      { user:"Nurul H.", avatar:"N", rating:4, comment:"Kawasan bersih dan owner cepat respond. Recommended!", date:"5 hari lalu" },
-      { user:"Benny T.", avatar:"B", rating:4, comment:"Makanan di kafeteria sedap. Nasi lemak pagi memang terbaik!", date:"2 minggu lalu" }
-    ]
-  },
-  {
-    id: 3,
-    name: "Kem Rimba Janda Baik",
-    location: "Bentong, Pahang",
-    state: "Pahang",
-    lat: 3.6012, lng: 101.8234,
-    type: ["Highland","Trekking","Glamping"],
-    price: 45,
-    capacity: "80 orang",
-    area: "3 ekar",
-    openHours: "24 jam",
-    rating: 4.9, totalReviews: 56,
-    bestFor: ["Pasangan","Fotografi","Pencinta Alam"],
-    owner: { name: "Encik Farid", phone: "0177654321", whatsapp: "60177654321" },
-    facilities: ["Glamping Tent","Bonfire","Jungle Trek","Photography Spot","Breakfast Included","Hot Shower","Hammock"],
-    rules: ["No plastic bags","Dilarang merokok dalam tent","Generator dibenarkan hingga 10pm","Haiwan peliharaan tidak dibenarkan","Minimum 2 malam pada hujung minggu"],
-    description: "Pengalaman glamping premium di kawasan highland Janda Baik dengan pemandangan gunung yang memukau. Setiap tent dilengkapi dengan katil, lampu suluh, dan sarapan pagi percuma. Pada waktu malam, langit dipenuhi bintang yang tiada tandingannya. Sesuai untuk pasangan yang mencari pengalaman romantik atau fotografer yang mahukan shot alam semulajadi terbaik.",
-    photos: [
-      "https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=800&q=80",
-      "https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=800&q=80",
-      "https://images.unsplash.com/photo-1520962922320-2038eebab146?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Darwisyah Z.", avatar:"D", rating:5, comment:"View dia luar biasa! Malam nampak bintang penuh. Terbaik!", date:"1 hari lalu" },
-      { user:"Khairul A.", avatar:"K", rating:5, comment:"Glamping experience yang sangat worth it. Akan datang lagi!", date:"4 hari lalu" },
-      { user:"Melissa C.", avatar:"M", rating:5, comment:"Sarapan pagi sedap, tent selesa. Perfect honeymoon spot!", date:"1 minggu lalu" }
-    ]
-  },
-  {
-    id: 4,
-    name: "Kem Tasik Banding",
-    location: "Gerik, Perak",
-    state: "Perak",
-    lat: 5.0234, lng: 101.1234,
-    type: ["Lake","Fishing"],
-    price: 18,
-    capacity: "150 orang",
-    area: "10 ekar",
-    openHours: "6am – 10pm",
-    rating: 4.3, totalReviews: 38,
-    bestFor: ["Pemancing","Pencinta Alam","Kumpulan Lelaki"],
-    owner: { name: "Tok Wan Yusof", phone: "0165559988", whatsapp: "60165559988" },
-    facilities: ["Bot Sewa","Pancing","Dapur Awam","Hammock","Parking","Tempat Letak Perahu","Kedai Runcit"],
-    rules: ["Lesen memancing diperlukan","Dilarang menggunakan jaring","Ikan yang ditangkap mestilah dilepaskan semula (catch & release)","Waktu memancing: 6am – 6pm","Dilarang buang sampah ke dalam tasik"],
-    description: "Kem Tasik Banding terletak di tepi Tasik Royal Belum, salah satu hutan hujan tertua di dunia. Tempat ini ideal untuk pemancing yang ingin menikmati ketenangan alam sambil memancing pelbagai jenis ikan air tawar. Bot sewa tersedia untuk menjelajahi tasik yang luas. Pemandangan matahari terbenam di atas tasik adalah antara yang paling indah di Malaysia.",
-    photos: [
-      "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80",
-      "https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=800&q=80",
-      "https://images.unsplash.com/photo-1571863533956-01c88e79957e?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Johari M.", avatar:"J", rating:4, comment:"Tasik cantik, ikan pun banyak! Tok Wan sangat friendly.", date:"1 minggu lalu" },
-      { user:"Ramli S.", avatar:"R", rating:4, comment:"Tangkap ikan Toman besar! Pengalaman yang tak terlupakan.", date:"3 minggu lalu" }
-    ]
-  },
-  {
-    id: 5,
-    name: "Kem Pantai Cherating",
-    location: "Cherating, Pahang",
-    state: "Pahang",
-    lat: 4.0789, lng: 103.3876,
-    type: ["Beach","Family"],
-    price: 25,
-    capacity: "250 orang",
-    area: "6 ekar",
-    openHours: "24 jam",
-    rating: 4.6, totalReviews: 93,
-    bestFor: ["Keluarga","Sukan Air","Pasangan"],
-    owner: { name: "Abang Zaki", phone: "0134445566", whatsapp: "60134445566" },
-    facilities: ["Tepi Pantai","Bilik Mandi","BBQ Pit","Kayak Sewa","Parking","Wifi","Cafeteria","Surau"],
-    rules: ["Dilarang berenang selepas 7pm","Jaga kebersihan pantai","Dilarang bawa kenderaan ke atas pasir","Kayak hanya boleh disewa pada waktu siang","Dilarang bawa haiwan peliharaan ke pantai"],
-    description: "Kem Pantai Cherating menawarkan pengalaman camping terus di tepi pantai yang indah dengan ombak yang tenang. Sesuai untuk aktiviti sukan air seperti kayak, snorkeling, dan berjemur. Pada musim tertentu, boleh melihat penyu bertelur di pantai berhampiran. Matahari terbenam di Cherating adalah antara yang paling cantik di Pantai Timur Malaysia.",
-    photos: [
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80",
-      "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&q=80",
-      "https://images.unsplash.com/photo-1473116763249-2faaef81ccda?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Fatimah Z.", avatar:"F", rating:5, comment:"Pantai yang cantik! Ombak tenang, sesuai untuk anak-anak.", date:"2 hari lalu" },
-      { user:"David L.", avatar:"D", rating:5, comment:"Best camping experience! Kayak di waktu pagi sangat best.", date:"1 minggu lalu" },
-      { user:"Zuraida M.", avatar:"Z", rating:4, comment:"Matahari terbenam sangat cantik. Owner baik dan helpful.", date:"2 minggu lalu" }
-    ]
-  },
-  {
-    id: 6,
-    name: "Kem Gunung Ledang",
-    location: "Tangkak, Johor",
-    state: "Johor",
-    lat: 2.3678, lng: 102.6123,
-    type: ["Highland","Trekking","Jungle"],
-    price: 30,
-    capacity: "100 orang",
-    area: "4 ekar",
-    openHours: "7am – 9pm",
-    rating: 4.8, totalReviews: 71,
-    bestFor: ["Pendaki","Pencinta Alam","Kumpulan Aktif"],
-    owner: { name: "Pak Rashid", phone: "0167778899", whatsapp: "60167778899" },
-    facilities: ["Basecamp","Shower Sejuk","Kedai Peralatan","Guide Tersedia","Dapur","Parking","Klinik Kecemasan"],
-    rules: ["Mesti daftar masuk sebelum 3pm","Mendaki hanya bersama pemandu berlesen","Bawa keluar semua sampah anda","Dilarang memetik tumbuhan","Lapor kepada pihak berkuasa jika rasa tidak sihat"],
-    description: "Kem Gunung Ledang adalah titik permulaan bagi pendaki yang ingin menakluki Gunung Ledang, gunung bersejarah yang dikaitkan dengan legenda Puteri Gunung Ledang. Kemudahan basecamp yang lengkap termasuk panduan berpengalaman dan klinik kecemasan untuk keselamatan pendaki. Pemandangan dari puncak pada ketinggian 1,276m adalah ganjaran terbaik bagi pendaki yang berjaya.",
-    photos: [
-      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
-      "https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80",
-      "https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Hafifi A.", avatar:"H", rating:5, comment:"Pengalaman mendaki yang luar biasa! Guide sangat membantu.", date:"3 hari lalu" },
-      { user:"Anis R.", avatar:"A", rating:5, comment:"Basecamp bersih dan selesa. Pemandangan dari puncak memang tak terlupa!", date:"1 minggu lalu" },
-      { user:"Syahril M.", avatar:"S", rating:4, comment:"Laluan mendaki mencabar tapi berbaloi. Akan datang lagi!", date:"3 minggu lalu" }
-    ]
-  },
-  {
-    id: 7,
-    name: "Kem Sungai Sedim",
-    location: "Kulim, Kedah",
-    state: "Kedah",
-    lat: 5.5123, lng: 100.7234,
-    type: ["River","Jungle","Trekking"],
-    price: 12,
-    capacity: "180 orang",
-    area: "7 ekar",
-    openHours: "8am – 10pm",
-    rating: 4.4, totalReviews: 47,
-    bestFor: ["Keluarga","Pelajar","Kumpulan Besar"],
-    owner: { name: "Encik Hasrul", phone: "0114443322", whatsapp: "60114443322" },
-    facilities: ["River Tubing","Canopy Walk","Tandas","Shower","BBQ","Parking","Khemah Sewa","Kedai Makanan"],
-    rules: ["Pelampung wajib semasa river tubing","Dilarang lari di atas jambatan canopy","Waktu senyap 11pm","Dilarang membuang sampah ke dalam sungai","Kanak-kanak bawah 12 tahun mesti disertai dewasa"],
-    description: "Kem Sungai Sedim terkenal dengan aktiviti river tubing yang mendebarkan dan canopy walk yang menakjubkan. Sungai Sedim yang jernih mengalir melalui hutan dara, menjadikannya tempat yang sempurna untuk menikmati keindahan alam semulajadi Kedah. Tarikan utama adalah canopy walk sepanjang 1.3km yang menghubungkan pokok-pokok gergasi di ketinggian 30 meter.",
-    photos: [
-      "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80",
-      "https://images.unsplash.com/photo-1472396961693-142e6e269027?w=800&q=80",
-      "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Kamariah B.", avatar:"K", rating:4, comment:"River tubing sangat best! Anak-anak suka sangat.", date:"4 hari lalu" },
-      { user:"Izzatul H.", avatar:"I", rating:5, comment:"Canopy walk memang mengujakan! Pemandangan dari atas sangat cantik.", date:"2 minggu lalu" }
-    ]
-  },
-  {
-    id: 8,
-    name: "Kem Cameron Highlands",
-    location: "Brinchang, Pahang",
-    state: "Pahang",
-    lat: 4.5234, lng: 101.3876,
-    type: ["Highland","Trekking","Glamping"],
-    price: 55,
-    capacity: "60 orang",
-    area: "2 ekar",
-    openHours: "24 jam",
-    rating: 4.7, totalReviews: 108,
-    bestFor: ["Pasangan","Keluarga","Pelancong Antarabangsa"],
-    owner: { name: "Kak Suraya", phone: "0189996677", whatsapp: "60189996677" },
-    facilities: ["Glamping Dome","Heater","Strawberry Farm","Tea Plantation Tour","Hot Shower","Breakfast","Wifi","Parking"],
-    rules: ["Suhu malam boleh turun ke 14°C, bawa pakaian tebal","Check-in: 3pm, Check-out: 12pm","Dilarang memetik strawberi tanpa bayaran","Jaga kebersihan kawasan","Haiwan peliharaan tidak dibenarkan"],
-    description: "Kem Cameron Highlands menawarkan pengalaman glamping yang unik di kawasan ladang teh yang ikonik. Menginap dalam dome transparent yang membolehkan anda melihat bintang dari dalam bilik tidur. Suhu sejuk Cameron Highlands (14-25°C) menjadikannya pelarian sempurna dari panas bandar. Lawatan ke ladang strawberi dan ladang teh termasuk dalam pakej.",
-    photos: [
-      "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=800&q=80",
-      "https://images.unsplash.com/photo-1444492417251-9c84a5fa18e0?w=800&q=80",
-      "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Priya S.", avatar:"P", rating:5, comment:"Most beautiful camping experience! The dome under stars is magical.", date:"1 hari lalu" },
-      { user:"Rohana A.", avatar:"R", rating:5, comment:"Sejuk sangat tapi best! Strawberry fresh dari ladang sedap.", date:"5 hari lalu" },
-      { user:"James T.", avatar:"J", rating:4, comment:"Pemandangan ladang teh memang cantik. Breakfast sedap!", date:"2 minggu lalu" }
-    ]
-  },
-  {
-    id: 9,
-    name: "Kem Air Terjun Sungai Chiling",
-    location: "Kuala Kubu Bharu, Selangor",
-    state: "Selangor",
-    lat: 3.5678, lng: 101.6543,
-    type: ["Waterfall","River","Jungle"],
-    price: 10,
-    capacity: "120 orang",
-    area: "3 ekar",
-    openHours: "7am – 6pm",
-    rating: 4.5, totalReviews: 64,
-    bestFor: ["Pencinta Alam","Backpacker","Kumpulan Muda"],
-    owner: { name: "Pak Long Idris", phone: "0122221133", whatsapp: "60122221133" },
-    facilities: ["Air Terjun","Sungai Jernih","Tandas Asas","Parking","Jambatan Gantung","Kolam Semulajadi"],
-    rules: ["Tiada kemudahan elektrik","Bawa makanan sendiri","Dilarang bising (kawasan konservasi)","Perlu menyeberangi sungai 7 kali untuk sampai","Dilarang membuat api"],
-    description: "Sungai Chiling adalah permata tersembunyi Selangor yang memerlukan 7 kali penyeberangan sungai untuk sampai ke air terjun utama. Perjalanan ke sana adalah sebahagian daripada pengalaman — meredah sungai, hutan primer, dan alam liar. Air terjun yang tinggi mencurah ke kolam semulajadi yang jernih dan sejuk. Tempat yang paling authentic untuk camper sejati.",
-    photos: [
-      "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?w=800&q=80",
-      "https://images.unsplash.com/photo-1455218873509-8097305ee378?w=800&q=80",
-      "https://images.unsplash.com/photo-1547970810-dc1eac37d174?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Asyraf M.", avatar:"A", rating:5, comment:"Perjalanan mencabar tapi berbaloi 100%! Air terjun gergasi!", date:"2 hari lalu" },
-      { user:"Linda K.", avatar:"L", rating:4, comment:"Authentic jungle experience. Bawa kasut yang sesuai untuk sungai!", date:"1 minggu lalu" }
-    ]
-  },
-  {
-    id: 10,
-    name: "Kem Gua Tempurung",
-    location: "Gopeng, Perak",
-    state: "Perak",
-    lat: 4.3789, lng: 101.1456,
-    type: ["Cave","Jungle","Trekking"],
-    price: 22,
-    capacity: "90 orang",
-    area: "4 ekar",
-    openHours: "8am – 8pm",
-    rating: 4.4, totalReviews: 52,
-    bestFor: ["Pencinta Cabaran","Kumpulan Aktif","Pelajar"],
-    owner: { name: "Encik Zainudin", phone: "0155667788", whatsapp: "60155667788" },
-    facilities: ["Gua Tour","Helmet & Torch","Shower","Parking","Dapur","Camping Ground","Khemah Sewa"],
-    rules: ["Wajib memakai helmet dalam gua","Dilarang masuk gua tanpa pemandu","Jangan sentuh stalaktit/stalagmit","Bawa cahaya tambahan","Tidak sesuai untuk claustrophobic"],
-    description: "Kem Gua Tempurung terletak bersebelahan dengan Gua Tempurung, salah satu gua terbesar di Semenanjung Malaysia. Pengalaman menjelajahi gua sepanjang 3km dengan stalaktit dan stalagmit yang menakjubkan adalah tidak ternilai. Terdapat 5 peringkat lawatan gua dari mudah hingga ekstrem. Selepas menjelajah gua, relaks di kawasan perkhemahan yang tenang di pinggir hutan.",
-    photos: [
-      "https://images.unsplash.com/photo-1520206183501-b80df61043c2?w=800&q=80",
-      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&q=80",
-      "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=80"
-    ],
-    reviews: [
-      { user:"Fadzillah N.", avatar:"F", rating:5, comment:"Gua yang menakjubkan! Guide sangat profesional dan selamat.", date:"6 hari lalu" },
-      { user:"Victor T.", avatar:"V", rating:4, comment:"Unique experience! Cave exploration memang mendebarkan.", date:"3 minggu lalu" }
-    ]
-  }
-];
-
-let currentFilter = "All";
+// ─── STATE ────────────────────────────────────────────────
+let campsites     = [];
+let currentFilter = 'All';
 let currentSite   = null;
 let currentPhoto  = 0;
 let writeRating   = 0;
 let contactOpen   = false;
 
+// ─── CSV PARSER ───────────────────────────────────────────
+function parseCSV(csv) {
+  const lines = csv.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  // Parse headers — strip BOM and quotes
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^\uFEFF/, '').replace(/^"|"$/g, ''));
+
+  return lines.slice(1).map((line, index) => {
+    // Handle quoted fields that may contain commas
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQuotes = !inQuotes; }
+      else if (ch === ',' && !inQuotes) { values.push(current.trim()); current = ''; }
+      else { current += ch; }
+    }
+    values.push(current.trim());
+
+    const get = (col) => {
+      const i = headers.indexOf(col);
+      return i !== -1 ? (values[i] || '').replace(/^"|"$/g, '').trim() : '';
+    };
+
+    const splitPipe = (col) => get(col).split('|').map(s => s.trim()).filter(Boolean);
+
+    const photos = [get('photo1'), get('photo2'), get('photo3')].filter(Boolean);
+
+    return {
+      id:           index + 1,
+      name:         get('name'),
+      location:     get('location'),
+      state:        get('state'),
+      lat:          parseFloat(get('lat')) || 0,
+      lng:          parseFloat(get('lng')) || 0,
+      type:         splitPipe('type'),
+      price:        parseFloat(get('price')) || 0,
+      capacity:     get('capacity'),
+      area:         get('area'),
+      openHours:    get('openHours'),
+      rating:       parseFloat(get('rating')) || 0,
+      totalReviews: parseInt(get('totalReviews')) || 0,
+      bestFor:      splitPipe('bestFor'),
+      facilities:   splitPipe('facilities'),
+      rules:        splitPipe('rules'),
+      description:  get('description'),
+      photos:       photos.length ? photos : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=80'],
+      reviews:      [],
+      owner: {
+        name:      get('ownerName'),
+        phone:     get('ownerPhone'),
+        whatsapp:  get('ownerWhatsapp')
+      }
+    };
+  }).filter(c => c.name); // skip empty rows
+}
+
+// ─── LOAD FROM GOOGLE SHEETS ──────────────────────────────
+async function loadCampsites() {
+  try {
+    const res = await fetch(SHEET_URL);
+    if (!res.ok) throw new Error('Network response was not ok');
+    const csv = await res.text();
+    campsites = parseCSV(csv);
+
+    if (campsites.length === 0) throw new Error('No data parsed');
+
+    document.getElementById('loading-screen').classList.add('hidden');
+    renderCards();
+    buildFilters();
+  } catch (err) {
+    console.error('Failed to load campsites:', err);
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('error-banner').classList.add('show');
+  }
+}
+
+// ─── VIEWS ────────────────────────────────────────────────
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -782,6 +622,7 @@ function showView(name) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ─── FILTERS ──────────────────────────────────────────────
 function buildFilters() {
   const allTypes = ["All","Jungle","River","Waterfall","Family","Highland","Trekking","Lake","Fishing","Beach","Glamping","Cave"];
   const wrap = document.getElementById('filters');
@@ -806,11 +647,13 @@ function setFilter(type) {
   renderCards();
 }
 
+// ─── CARDS ────────────────────────────────────────────────
 function renderCards() {
-  buildFilters();
   const q = (document.getElementById('search-input').value || '').toLowerCase();
   const filtered = campsites.filter(c => {
-    const matchQ = c.name.toLowerCase().includes(q) || c.location.toLowerCase().includes(q) || c.state.toLowerCase().includes(q);
+    const matchQ = c.name.toLowerCase().includes(q) ||
+                   c.location.toLowerCase().includes(q) ||
+                   c.state.toLowerCase().includes(q);
     const matchT = currentFilter === 'All' || c.type.includes(currentFilter);
     return matchQ && matchT;
   });
@@ -850,6 +693,7 @@ function renderCards() {
     </div>`).join('');
 }
 
+// ─── DETAIL ───────────────────────────────────────────────
 function openDetail(id) {
   currentSite  = campsites.find(c => c.id === id);
   currentPhoto = 0;
@@ -866,7 +710,7 @@ function openDetail(id) {
   document.getElementById('det-state').textContent  = '🏳️ ' + s.state;
   document.getElementById('det-price').textContent  = 'RM' + s.price;
   document.getElementById('det-desc').textContent   = s.description;
-  document.getElementById('det-stars').textContent  = '★'.repeat(Math.round(s.rating)) + '☆'.repeat(5-Math.round(s.rating));
+  document.getElementById('det-stars').textContent  = '★'.repeat(Math.round(s.rating)) + '☆'.repeat(5 - Math.round(s.rating));
   document.getElementById('det-rating-val').textContent   = s.rating;
   document.getElementById('det-rating-count').textContent = `(${s.totalReviews} ulasan)`;
   document.getElementById('review-section-label').textContent = `⭐ Ulasan Campers (${s.reviews.length})`;
@@ -918,19 +762,23 @@ function renderGallery() {
 function setPhoto(i) { currentPhoto = i; renderGallery(); }
 
 function renderReviews() {
-  document.getElementById('reviews-list').innerHTML =
-    currentSite.reviews.map(r=>`
-      <div class="review-item">
-        <div class="avatar">${r.avatar}</div>
-        <div style="flex:1">
-          <div class="rv-meta">
-            <span class="rv-user">${r.user}</span>
-            <span class="rv-date">${r.date}</span>
-          </div>
-          <div class="rv-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
-          <div class="rv-comment">${r.comment}</div>
+  const list = document.getElementById('reviews-list');
+  if (!currentSite.reviews.length) {
+    list.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:8px 0">Belum ada ulasan. Jadilah yang pertama!</p>';
+    return;
+  }
+  list.innerHTML = currentSite.reviews.map(r=>`
+    <div class="review-item">
+      <div class="avatar">${r.avatar}</div>
+      <div style="flex:1">
+        <div class="rv-meta">
+          <span class="rv-user">${r.user}</span>
+          <span class="rv-date">${r.date}</span>
         </div>
-      </div>`).join('');
+        <div class="rv-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
+        <div class="rv-comment">${r.comment}</div>
+      </div>
+    </div>`).join('');
 }
 
 function renderWriteStars() {
@@ -959,6 +807,7 @@ function toggleContact() {
   contactOpen ? box.classList.add('open') : box.classList.remove('open');
 }
 
+// ─── MAP LIST ─────────────────────────────────────────────
 function renderMapList() {
   document.getElementById('map-list').innerHTML = campsites.map(s=>`
     <div class="map-card">
@@ -975,7 +824,8 @@ function renderMapList() {
     </div>`).join('');
 }
 
-renderCards();
+// ─── INIT ─────────────────────────────────────────────────
+loadCampsites();
 </script>
 </body>
 </html>
