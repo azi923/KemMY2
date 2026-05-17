@@ -55,7 +55,7 @@
   .logo-icon { font-size: 28px; }
   .logo-name { font-family:'Playfair Display',serif; font-size:20px; color:var(--green); line-height:1; }
   .logo-tagline { font-size:9px; color:var(--text-muted); letter-spacing:.2em; text-transform:uppercase; margin-top:2px; }
-  nav { display:flex; gap:8px; }
+  nav { display:flex; gap:8px; align-items:center; }
   .nav-btn {
     background: transparent;
     border: 1px solid rgba(74,124,70,.2);
@@ -375,19 +375,8 @@
     font-size:12px; cursor:pointer; font-family:inherit; font-weight:600;
   }
 
-  @keyframes fadeUp {
-    from { opacity:0; transform:translateY(18px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
-
-  @media (max-width:520px) {
-    .action-grid { grid-template-columns:1fr; }
-    .stats-grid { grid-template-columns:repeat(2,1fr); }
-    .grid { padding:0 12px 40px; }
-    header { padding:12px 16px; }
-    .hero { padding:36px 16px 24px; }
-  }
-.auth-btn {
+  /* AUTH */
+  .auth-btn {
     background: rgba(74,124,70,.15);
     border: 1px solid rgba(74,124,70,.3);
     color: var(--green); border-radius: 20px;
@@ -403,6 +392,19 @@
     border: 2px solid var(--green); object-fit: cover;
   }
   .profile-name { color: var(--green); font-size: 13px; font-weight: 600; }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(18px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  @media (max-width:520px) {
+    .action-grid { grid-template-columns:1fr; }
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+    .grid { padding:0 12px 40px; }
+    header { padding:12px 16px; }
+    .hero { padding:36px 16px 24px; }
+  }
 </style>
 </head>
 <body>
@@ -426,7 +428,7 @@
     <button class="nav-btn active" id="nav-home" onclick="showView('home')">🏠 Explore</button>
     <button class="nav-btn" id="nav-map" onclick="showView('map')">🗺️ Peta</button>
     <div id="auth-area">
-      <button class="auth-btn" onclick="loginWithGoogle()">🔑 Log Masuk</button>
+      <button class="auth-btn" id="btn-login">🔑 Log Masuk</button>
     </div>
   </nav>
 </header>
@@ -555,11 +557,9 @@ function parseCSV(csv) {
   const lines = csv.trim().split('\n');
   if (lines.length < 2) return [];
 
-  // Parse headers — strip BOM and quotes
   const headers = lines[0].split(',').map(h => h.trim().replace(/^\uFEFF/, '').replace(/^"|"$/g, ''));
 
   return lines.slice(1).map((line, index) => {
-    // Handle quoted fields that may contain commas
     const values = [];
     let current = '';
     let inQuotes = false;
@@ -606,7 +606,7 @@ function parseCSV(csv) {
         whatsapp:  get('ownerWhatsapp')
       }
     };
-  }).filter(c => c.name); // skip empty rows
+  }).filter(c => c.name);
 }
 
 // ─── LOAD FROM GOOGLE SHEETS ──────────────────────────────
@@ -638,7 +638,7 @@ function showView(name) {
   if (navBtn) navBtn.classList.add('active');
   if (name === 'home') renderCards();
   if (name === 'map')  renderMapList();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 // ─── FILTERS ──────────────────────────────────────────────
@@ -846,9 +846,11 @@ function renderMapList() {
 // ─── INIT ─────────────────────────────────────────────────
 loadCampsites();
 </script>
+
+<!-- ─── FIREBASE AUTH ─────────────────────────────────────── -->
 <script type="module">
   import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import {getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged}
+  import {getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged}
     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
   const firebaseConfig = {
@@ -864,18 +866,16 @@ loadCampsites();
   const auth     = getAuth(app);
   const provider = new GoogleAuthProvider();
 
-  window.loginWithGoogle = async () => {
-    try {
-      await signInWithPopup(auth, provider);
-    } catch(err) {
-      console.error('Login failed:', err);
+  // ─── Handle redirect result after Google login ───────────
+  getRedirectResult(auth).then((result) => {
+    if (result?.user) {
+      console.log('Logged in:', result.user.displayName);
     }
-  };
+  }).catch((err) => {
+    console.error('Redirect error:', err);
+  });
 
-  window.logOut = async () => {
-    await signOut(auth);
-  };
-
+  // ─── Watch login state & update header ───────────────────
   onAuthStateChanged(auth, (user) => {
     const area = document.getElementById('auth-area');
     if (user) {
@@ -883,12 +883,19 @@ loadCampsites();
         <div class="profile-wrap">
           <img class="profile-photo" src="${user.photoURL}" alt="profile" />
           <span class="profile-name">${user.displayName.split(' ')[0]}</span>
-          <button class="auth-btn" onclick="logOut()">Log Keluar</button>
+          <button class="auth-btn" id="btn-logout">Log Keluar</button>
         </div>`;
+      document.getElementById('btn-logout').addEventListener('click', async () => {
+        await signOut(auth);
+      });
     } else {
-      area.innerHTML = `<button class="auth-btn" onclick="loginWithGoogle()">🔑 Log Masuk</button>`;
+      area.innerHTML = `<button class="auth-btn" id="btn-login">🔑 Log Masuk</button>`;
+      document.getElementById('btn-login').addEventListener('click', async () => {
+        await signInWithRedirect(auth, provider);
+      });
     }
   });
 </script>
+
 </body>
 </html>
