@@ -846,5 +846,49 @@ function renderMapList() {
 // ─── INIT ─────────────────────────────────────────────────
 loadCampsites();
 </script>
+<script type="module">
+  import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import {getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged}
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCv6Fkkoh2nZnnMpMvA8GHOZlqKgllrVCM",
+    authDomain: "kem-my-f38f5.firebaseapp.com",
+    projectId: "kem-my-f38f5",
+    storageBucket: "kem-my-f38f5.firebasestorage.app",
+    messagingSenderId: "804765535284",
+    appId: "1:804765535284:web:37d5538227d7b27ee90e61"
+  };
+
+  const app      = initializeApp(firebaseConfig);
+  const auth     = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  window.loginWithGoogle = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch(err) {
+      console.error('Login failed:', err);
+    }
+  };
+
+  window.logOut = async () => {
+    await signOut(auth);
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    const area = document.getElementById('auth-area');
+    if (user) {
+      area.innerHTML = `
+        <div class="profile-wrap">
+          <img class="profile-photo" src="${user.photoURL}" alt="profile" />
+          <span class="profile-name">${user.displayName.split(' ')[0]}</span>
+          <button class="auth-btn" onclick="logOut()">Log Keluar</button>
+        </div>`;
+    } else {
+      area.innerHTML = `<button class="auth-btn" onclick="loginWithGoogle()">🔑 Log Masuk</button>`;
+    }
+  });
+</script>
 </body>
 </html>
